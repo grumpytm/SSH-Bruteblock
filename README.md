@@ -45,3 +45,9 @@ To filter out junk and have the information I want in the /var/log/auth.log file
 :msg, contains, "www-data by root" ~
 auth,authpriv.*                 /var/log/auth.log
 ```
+I stop bruteforce attempts with these iptables rules:
+```
+iptables -A INPUT -p tcp -m tcp --dport 22 -m state --state NEW -m hashlimit --hashlimit 1/hour --hashlimit-burst 3 --hashlimit-mode srcip --hashlimit-name SSH --hashlimit-htable-expire 600000 -j ACCEPT
+iptables -A INPUT -p tcp -m tcp --dport 22 --tcp-flags SYN,RST,ACK SYN -j DROP
+iptables -A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT
+```
