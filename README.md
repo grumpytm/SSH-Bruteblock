@@ -17,12 +17,31 @@ Could not write ident string to
 Failed keyboard-interactive
 ssh_dispatch_run_fatal: Connection from
 ```
-I then store the events log as it is in a sqlite3 database to report (feature has been taken out for now but will get it back soon) and via an ipset IP set
+that are then stored in a sqlite3 database and blocked via an ipset IP set:
 
 > ipset create blacklist hash:net
 
-and a simple iptables rule
+and a simple iptables rule:
 
 > iptables -I PREROUTING -t raw -m set --match-set blacklist src,dst -j DROP
 
 I basically null route the IP's with 3 or multiple events in the last 6 months.
+
+To filter out junk and have the information I want in the /var/log/auth.log file my /etc/rsyslog.d/50-default.conf looks like this:
+```
+#auth,authpriv.*                        /var/log/auth.log
+:msg, contains, "pam_unix(cron:session)" ~
+:msg, contains, "pam_unix(samba:session)" ~
+:msg, contains, "pam_unix(sudo:session)" ~
+:msg, contains, "pam_unix(su:session)" ~
+:msg, contains, "input_userauth_request" ~
+:msg, contains, "+ ??? root:nobody" ~
+:msg, contains, "Successful su for nobody by root" ~
+:msg, contains, "warning: /etc/hosts.deny" ~
+:msg, contains, "systemd-logind" ~
+:msg, contains, "pam_unix(sshd:session)" ~
+:msg, contains, "fatal: Read from socket failed:" ~
+:msg, contains, "root:www-data" ~
+:msg, contains, "www-data by root" ~
+auth,authpriv.*                 /var/log/auth.log
+```
